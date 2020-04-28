@@ -21,6 +21,9 @@ io.on('connection', socket => {
     playerId: socket.id,
     team: Math.floor(Math.random() * 2) == 0 ? 'red' : 'blue'
   };
+
+  console.log(players[socket.id]);
+
   // send players object to new player
   socket.emit('currentPlayers', players);
   // send the new player data to all other players
