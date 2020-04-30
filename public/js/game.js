@@ -22,6 +22,7 @@ const game = new Phaser.Game(config);
 function preload() {
   this.load.image('ship', 'assets/spaceShips_001.png');
   this.load.image('otherPlayer', 'assets/enemyBlack5.png');
+  this.load.image('star', 'assets/star_gold.png');
 }
 
 function create() {
@@ -57,7 +58,37 @@ function create() {
       }
     });
   });
+
   this.cursors = this.input.keyboard.createCursorKeys();
+  this.blueScoreText = this.add.text(16, 16, '', {
+    fontSize: '32px',
+    fill: '#0000FF',
+    fontStyle: 'bold'
+  });
+  this.redScoreText = this.add.text(584, 16, '', {
+    fontSize: '32px',
+    fill: '#FF0000',
+    fontStyle: 'bold'
+  });
+  this.socket.on('scoreUpdate', scores => {
+    self.blueScoreText.setText('Blue: ' + scores.blue);
+    self.redScoreText.setText('Red: ' + scores.red);
+  });
+  this.socket.on('starLocation', starLocation => {
+    if (self.star) {
+      self.star.destroy();
+    }
+    self.star = self.physics.add.image(starLocation.x, starLocation.y, 'star');
+    self.physics.add.overlap(
+      self.ship,
+      self.star,
+      () => {
+        this.socket.emit('starCollected');
+      },
+      null,
+      self
+    );
+  });
 }
 
 function update() {
@@ -71,9 +102,17 @@ function update() {
     }
 
     if (this.cursors.up.isDown) {
+      // thrust
       this.physics.velocityFromRotation(
         this.ship.rotation + 1.5,
-        100,
+        200,
+        this.ship.body.acceleration
+      );
+    } else if (this.cursors.down.isDown) {
+      // brakes
+      this.physics.velocityFromRotation(
+        this.ship.rotation + 1.5,
+        -200,
         this.ship.body.acceleration
       );
     } else {
